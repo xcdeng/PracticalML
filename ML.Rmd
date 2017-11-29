@@ -1,0 +1,89 @@
+---
+title: "Practical Machine Learning Course Work R Markdown"
+author: "xc"
+date: "26 November 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+This is a R markdown file for Practical Machine Learning course project submission. 
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+## Data source
+The training data for this project are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+The test data are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
+
+## Project goal
+The goal of your project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.
+
+## Library and seed setting for Reproducibility
+```{r,eval=FALSE}
+library(MASS)
+library(caret)
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+library(RColorBrewer)
+library(rattle)
+set.seed(4444)
+```
+
+## Data Processing
+### Load the data and replace blank with NA
+
+```{r,eval=FALSE}
+training = read.csv("C:/Users/xc/data science/R program assignment/practical machine learning/week4/training.csv",	na.strings=c("NA","#DIV/0!",""))	
+testing=read.csv("C:/Users/xc/data science/R program assignment/practical machine learning/week4/testing.csv",na.strings=c("NA","#DIV/0!",""))
+```
+###Remove parameters with NA rate > 0.95 and parameters which do not contribute to  
+```{r,eval=FALSE}
+NArate <- apply(myTraining, 2, function(x) sum(is.na(x)))/nrow(myTraining)
+NArate <- apply(myTraining, 2, function(x) sum(is.na(x)))/nrow(myTraining)
+training<-training[!(NArate>0.95)]
+testing<-testing[!(NArate>0.95)]
+regex <- grepl("^X|timestamp|user_name", names(training))
+training <- training[, !regex]
+testing<-testing[,!regex]
+````
+### split the training data into validation and training
+```{r,eval=FALSE}
+train<-createDataPartition(y=training$classe,p=0.6,list=FALSE)
+myTraining<-training[train,]
+myTesting<-training[-train,]
+dim(myTraining)
+dim(myTesting)
+```
+## Modeling
+###Apply random forest to build the model
+```{r,eval=FALSE}
+modFitRF <- randomForest(myTraining$classe ~ .,   data=myTraining, do.trace=F)
+print(modFitRF)
+predicRF<-predict(modFitRF,myTesting,type="class")
+cm1<-confusionMatrix(predicRF,myTesting$classe)
+```
+
+###Apply decision tree to build the model
+```{r,eval=FALSE}
+modFitDT <- rpart(myTraining$classe ~ .,   data=myTraining, method="class")
+predicDT<-predict(modFitDT,myTesting,type="class")
+cm2<-confusionMatrix(predicDT,myTesting$classe)
+```
+Random forest delivery better accuracy (0.994) compared with decision tree model (0.723)
+therefore random forest is used to predict the testing data. 
+
+##Submission
+Here is the final outcome based on the Prediction Model 2 (Random Forest) applied against the Testing dataset
+```{r,eval=FALSE}
+predictfinal <- predict(modFitRF, testing, type="class")
+predictfinal
+```
+
